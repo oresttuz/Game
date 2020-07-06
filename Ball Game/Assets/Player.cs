@@ -7,12 +7,44 @@ public class Player : MonoBehaviour
     public int health;
     public bool isAlive, takingDmg;
 
+    public Transform attackPoint;
+    public float attackRange = 0.5f;
+    public LayerMask enemyLayers;
+
     // Start is called before the first frame update
     void Start()
     {
         health = 5;
         isAlive = true;
         takingDmg = false;
+    }
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.J))
+        {
+            Attack();
+        }
+    }
+
+    void Attack()
+    {
+
+        Collider2D[] hitEnemies =  Physics2D.OverlapCircleAll(attackPoint.position, attackRange, enemyLayers);
+
+        foreach (Collider2D enemy in hitEnemies)
+        {
+            Debug.Log("Hah, Gotem: " + enemy.tag);
+        }
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (attackPoint == null)
+        {
+            return;
+        }
+        Gizmos.DrawWireSphere(attackPoint.position, attackRange);
     }
 
     private void FixedUpdate()
@@ -33,20 +65,20 @@ public class Player : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        Debug.Log("Here");
+        //Debug.Log("Here");
         if (collision.collider.tag == "Enemy")
         {
-            Debug.Log("Is an enemy");
+            //Debug.Log("Is an enemy");
             takingDmg = true;
         }
     }
 
     private void OnCollisionExit2D(Collision2D collision)
     {
-        Debug.Log("Bye");
+        //Debug.Log("Bye");
         if (collision.collider.tag == "Enemy")
         {
-            Debug.Log("Mr.Enemy");
+            //Debug.Log("Mr.Enemy");
             takingDmg = false;
         }
     }
