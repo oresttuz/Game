@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class Player : MonoBehaviour
 {
+    public Animator PlayerAnimator;
+
     public int health;
     public bool isAlive, takingDmg;
 
@@ -24,7 +26,13 @@ public class Player : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.J))
         {
             Attack();
+            PlayerAnimator.SetBool("Attack", true);
         }
+        else
+        {
+            PlayerAnimator.SetBool("Attack", false);
+        }
+        
     }
 
     void Attack()
