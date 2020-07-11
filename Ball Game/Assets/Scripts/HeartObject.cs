@@ -5,11 +5,14 @@ using UnityEngine;
 public class HeartObject : MonoBehaviour
 {
     public SpriteRenderer renderer;
-    public GameObject heartObject;
+    public RectTransform rectTransform;
 
-    public HeartObject(SpriteRenderer sr, GameObject ho)
+    public int SpriteIndex;
+
+    public HeartObject(SpriteRenderer sr, RectTransform rt, int si)
     {
         renderer = sr;
-        heartObject = ho;
+        rectTransform = rt;
+        SpriteIndex = si;
     }
 }
