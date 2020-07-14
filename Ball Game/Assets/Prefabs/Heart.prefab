@@ -102,3 +102,4 @@ MonoBehaviour:
   renderer: {fileID: 7777961618513872479}
   rectTransform: {fileID: 7777961618513872477}
   SpriteIndex: 4
+  health: 1

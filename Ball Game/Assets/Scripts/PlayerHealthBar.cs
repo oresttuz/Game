@@ -12,21 +12,24 @@ public class PlayerHealthBar : MonoBehaviour
     public int totalHealth;
     public float currHealth;
 
-    private Vector3 endPosition;
+    private Vector3 startPos;
     public float padding;
 
     public HeartObject pfHeart;
 
     private void Start()
     {
-        endPosition = new Vector3(35f, -30f, 0f);
+        startPos = new Vector3(35f, -30f, 0f);
 
         health = new List<HeartObject>();
-        for (int i = 0; i < totalHealth; i++)
+        int startingHealth = totalHealth;
+        for (int i = 0; i < startingHealth; i++)
         {
-            health.Add(MakeHeart());
+            AddHealth();
         }
 
+        //reset just for start function
+        totalHealth = startingHealth;
         currHealth = (totalHealth * 1f);
     }
 
@@ -42,7 +45,7 @@ public class PlayerHealthBar : MonoBehaviour
         }
         if (Input.GetKeyDown(KeyCode.O))
         {
-            AddHealth(1);
+            AddHealth();
         }
         if (Input.GetKeyDown(KeyCode.P))
         {
@@ -50,17 +53,18 @@ public class PlayerHealthBar : MonoBehaviour
         }
     }
 
-    public void AddHealth(int numHealth)
+    public void AddHealth()
     {
-        if (numHealth < 1)
+        health.Add(MakeHeart());
+        totalHealth++;
+        currHealth++;
+        if (health.Count > 1)
         {
-            return;
+            for (int i = 0; i < health.Count - 1; i++)
+            {
+                health[i].transform.localPosition = new Vector3(health[i].transform.localPosition.x + padding, startPos.y, startPos.z);
+            }
         }
-        for (int i = 0; i < numHealth; i++)
-        {
-            health.Add(MakeHeart());
-        }
-        totalHealth += numHealth;
     }
 
     public void RemoveHealth(int numHealth)
@@ -73,130 +77,67 @@ public class PlayerHealthBar : MonoBehaviour
         {
             numHealth = totalHealth;
         }
-        float totalPaddding = 0f;
+        int tempCount = health.Count;
         for (int i = 0; i < numHealth; i++)
         {
-            Destroy(health[i]);
-            health.RemoveAt(i);
-            totalPaddding -= padding;
+            HeartObject temp = health[0];
+            health.RemoveAt(0);
+            Destroy(temp.gameObject);
         }
         totalHealth -= numHealth;
-        endPosition.x += totalPaddding;
-        foreach (HeartObject h in health)
-        { 
-            h.transform.localPosition = new Vector3(h.transform.localPosition.x + totalPaddding, endPosition.y, endPosition.z);
+        if (totalHealth < currHealth)
+        {
+            currHealth = totalHealth;
         }
     }
 
     public void Heal(float amount)
     {
-        if (amount < 0.25f)
+        Debug.Log("Before Heal: " + currHealth);
+        if (amount < 0.25f) //amount is too small
         {
             return;
         }
-        if (currHealth == (totalHealth * 1.0f))
+        if (currHealth >= (totalHealth * 1.0f)) //fully healed
         {
             return;
         }
-        float newHealth = currHealth + amount;
-        if (newHealth > totalHealth)
+        currHealth = 0f;
+        for (int i = health.Count - 1; i >= 0; i--)
         {
-            newHealth = totalHealth;
-            amount = totalHealth - currHealth;
+            amount = health[i].Heal(amount);
+            health[i].renderer.sprite = healthSprites[(int)(health[i].health * 4)];
+            currHealth += health[i].health;
         }
-        int flooredNewHealth = Mathf.FloorToInt(newHealth);
-        for (int i = Mathf.FloorToInt(currHealth); i <= flooredNewHealth; i++)
-        {
-            if (amount < 1f && amount > 0f)
-            {
-                int newSpriteIndex = health[i].SpriteIndex + (int)(amount * 4);
-                if (newSpriteIndex > 4)
-                {
-                    newSpriteIndex = 4;
-                    amount -= ((4 - health[i].SpriteIndex) / 4f);
-                }
-                else
-                {
-                    amount = 0f;
-                }
-                health[i].SpriteIndex = newSpriteIndex;
-                health[i].renderer.sprite = healthSprites[newSpriteIndex];
-            }
-            else
-            {
-                amount -= (1f - (health[i].SpriteIndex / 4f));
-                health[i].SpriteIndex = 4;
-                health[i].renderer.sprite = healthSprites[4];
-            }
-        }
-        currHealth = newHealth;
     }
     public void Damage(float amount)
     {
-        Debug.Log(currHealth);
-        Debug.Log(amount);
-        Debug.Log(health.Count);
-        if (amount < 0.25f) 
+        if (amount < 0.25f) //amount too small
         {
             return;
         }
-        if (currHealth == 0f) 
+        if (currHealth == 0f) //no health to remove;
         {
             return;
         }
-        float newHealth = currHealth - amount; 
-        if (newHealth < 0.25f) 
+        float diff = 0f;
+        foreach (HeartObject heart in health)
         {
-            newHealth = 0f;
-            amount = currHealth;
-        }
-        int flooredNewHealth = Mathf.FloorToInt(newHealth);
-        for (int i = Mathf.FloorToInt(currHealth) - 1; i >= flooredNewHealth; i--) 
-        {
-            if (amount < 1f && amount > 0f) 
+            if (amount > 0f)
             {
-                int newSpriteIndex = health[i].SpriteIndex - (int)(amount * 4);
-                if (newSpriteIndex < 0)
-                {
-                    newSpriteIndex = 0;
-                    amount -= (health[i].SpriteIndex / 4f);
-                }
-                else
-                {
-                    amount = 0f;
-                }
-                health[i].SpriteIndex = newSpriteIndex;
-                health[i].renderer.sprite = healthSprites[newSpriteIndex];
-            }
-            else 
-            {
-                amount -= (health[i].SpriteIndex / 4f);
-                health[i].SpriteIndex = 0;
-                health[i].renderer.sprite = healthSprites[0];
-            }
+                diff = heart.health;
+                amount = heart.Damage(amount);
+                diff -= heart.health;
+                heart.renderer.sprite = healthSprites[(int)(heart.health * 4)];
+                currHealth -= diff;
+            }   
         }
-        currHealth = newHealth;
     }
-
-    /*
-    public int SpriteIndex(Sprite s)
-    {
-        for (int currIndex = 0; currIndex < healthSprites.Length; currIndex++)
-        {
-            if (healthSprites[currIndex].name == s.name)
-            {
-                return currIndex;
-            }
-        }
-        return -1;
-    }
-    */
 
     public HeartObject MakeHeart()
     {
-        HeartObject cloneHeartObject = Instantiate(pfHeart, new Vector3(0f, 0f, 0f), Quaternion.identity, HealthBarTransform);
-        cloneHeartObject.transform.localPosition = endPosition;
-        endPosition.x += (padding);
+        HeartObject cloneHeartObject = Instantiate(pfHeart, new Vector3(0,0,0), Quaternion.identity, HealthBarTransform);
+        cloneHeartObject.transform.localPosition = startPos;
         return cloneHeartObject;
     }
 }
