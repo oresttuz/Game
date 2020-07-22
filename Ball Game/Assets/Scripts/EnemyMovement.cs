@@ -41,8 +41,12 @@ public class EnemyMovement : MonoBehaviour
             animator.SetBool("Attacking", true);
             foreach (Collider2D player in hitPlayers)
             {
-                Debug.Log("Bam Get Dinked " + player.name);
+                player.GetComponentInParent<Player>().HealthBar.Damage(1f);
             }
+        }
+        else
+        {
+            animator.SetBool("Attacking", false);
         }
     }
 

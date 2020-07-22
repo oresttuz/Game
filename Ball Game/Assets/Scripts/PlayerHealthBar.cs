@@ -105,7 +105,9 @@ public class PlayerHealthBar : MonoBehaviour
         currHealth = 0f;
         for (int i = health.Count - 1; i >= 0; i--)
         {
+            Debug.Log("Before: " + health[i].health);
             amount = health[i].Heal(amount);
+            Debug.Log("After: " + health[i].health);
             health[i].renderer.sprite = healthSprites[(int)(health[i].health * 4)];
             currHealth += health[i].health;
         }

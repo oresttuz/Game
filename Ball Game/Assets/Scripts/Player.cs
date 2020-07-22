@@ -13,12 +13,16 @@ public class Player : MonoBehaviour
     public float attackRange = 0.5f;
     public LayerMask enemyLayers;
 
+    public PlayerHealthBar HealthBar;
+    public List<PickupItem> inventory;
+
     // Start is called before the first frame update
     void Start()
     {
         health = 5;
         isAlive = true;
         takingDmg = false;
+        inventory = new List<PickupItem>();
     }
 
     void Update()
@@ -56,18 +60,7 @@ public class Player : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (isAlive)
-        {
-            if (takingDmg)
-            {
-                health--;
-            }
-            if (health <= 0)
-            {
-                isAlive = false;
-                Debug.Log("Goodbye Cruel World");
-            }
-        }
+        
     }
 
     private void OnCollisionEnter2D(Collision2D collision)

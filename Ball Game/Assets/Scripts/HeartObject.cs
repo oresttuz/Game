@@ -27,8 +27,9 @@ public class HeartObject : MonoBehaviour
                 health += amount;
                 return 0f;
             }
+            float diff = health;
             health = 1f;
-            amount -= health; // Amount > Health
+            amount -= (1f - diff); // Amount > Health
             return amount;
         }
         return amount; // Health = 1f
