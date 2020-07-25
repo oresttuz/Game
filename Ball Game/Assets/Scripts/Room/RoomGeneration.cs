@@ -29,8 +29,8 @@ public class RoomGeneration : MonoBehaviour
     */
 
     public int numRooms;
-    public Tilemap tilemap;
-    public Tile floor;
+    public Tilemap floorMap, wallMap;
+    public Tile floor, wall;
     public Vector3Int totalRoomNum, roomSize;
     public GameObject PlayerObject;
 
@@ -44,9 +44,13 @@ public class RoomGeneration : MonoBehaviour
     private void Start()
     {
         //init room array and starting position
-        if (tilemap == null)
+        if (floorMap == null)
         {
-            tilemap = new Tilemap();
+            floorMap = new Tilemap();
+        }
+        if (wallMap == null)
+        {
+            wallMap = new Tilemap();
         }
         if (totalRoomNum == null)
         {
@@ -57,10 +61,12 @@ public class RoomGeneration : MonoBehaviour
             roomSize = new Vector3Int(16, 16, 0);
         }
         gridSize = new Vector3Int(totalRoomNum.x * roomSize.x, totalRoomNum.y * roomSize.y, 0);
-        tilemap.size = gridSize;
-        
+        floorMap.size = gridSize;
+        wallMap.size = gridSize;
+
         rooms = new Room[totalRoomNum.x, totalRoomNum.y];
         startPos = new Vector3Int(Random.Range(0, totalRoomNum.x), Random.Range(0, totalRoomNum.y), 0);
+        rooms[startPos.x, startPos.y] = new Room(1, roomSize);
 
         //branch and fill up the rest of the array with rooms
         if (numRooms > (totalRoomNum.x * totalRoomNum.y))
@@ -72,7 +78,6 @@ public class RoomGeneration : MonoBehaviour
         created = false;
 
         walkers = new List<Walker>();
-        //roomPosToInit = new List<Vector3Int>();
         initRooms = new List<Vector3Int>();
         walkers.Add(new Walker(startPos, new Vector3Int(0, 0, 0), totalRoomNum)); // first walker
 
@@ -102,8 +107,8 @@ public class RoomGeneration : MonoBehaviour
 
     public void AddRoom()
     {
-        Debug.Log("Number of Rooms: " + currRooms);
         Vector3Int temp;
+        int tempInt = -1;
         foreach (Walker w in walkers)
         {
             if (currRooms >= numRooms)
@@ -115,12 +120,23 @@ public class RoomGeneration : MonoBehaviour
             temp = w.Step();
             if (temp != null)
             {
-                if (initRooms.Contains(temp))
+                rooms[w.prevPos.x, w.prevPos.y].AddDoorway(w.direction);
+                if (w.direction < 2)
                 {
-                    Debug.Log("Passing by");
+                    tempInt = w.direction + 2;
                 }
                 else
                 {
+                    tempInt = w.direction - 2;
+                }
+                if (initRooms.Contains(temp))
+                {
+                    rooms[temp.x, temp.y].AddDoorway(tempInt);
+                }
+                else
+                {
+                    rooms[temp.x, temp.y] = new Room(1, roomSize);
+                    rooms[w.prevPos.x, w.prevPos.y].AddDoorway(tempInt);
                     initRooms.Add(temp);
                     currRooms++;
                 }
@@ -133,13 +149,16 @@ public class RoomGeneration : MonoBehaviour
     {
         foreach (Vector3Int v3i in initRooms)
         {
-            Debug.Log("v3i: " + v3i);
-            Debug.Log("v3i * roomsize: " + (v3i * roomSize));
-            Room tempRoom = new Room(roomSize.x, roomSize.y);
-            List<Vector3Int> tilesToAdd = tempRoom.CreateRoom(roomSize, 1);
-            foreach (Vector3Int tta in tilesToAdd)
+            //Debug.Log("Create" + v3i + ", " + rooms[v3i.x, v3i.y]);
+            List<Vector3Int> floorsToAdd = rooms[v3i.x, v3i.y].CreateFloors(roomSize);
+            foreach (Vector3Int fta in floorsToAdd)
             {
-                tilemap.SetTile(new Vector3Int(((v3i.x * roomSize.x) + tta.x), ((v3i.y * roomSize.y) + tta.y), 0), floor);
+                floorMap.SetTile(new Vector3Int(((v3i.x * roomSize.x) + fta.x), ((v3i.y * roomSize.y) + fta.y), 0), floor);
+            }
+            List<Vector3Int> wallsToAdd = rooms[v3i.x, v3i.y].CreateWalls();
+            foreach (Vector3Int wta in wallsToAdd)
+            {
+                floorMap.SetTile(new Vector3Int(((v3i.x * roomSize.x) + wta.x), ((v3i.y * roomSize.y) + wta.y), 0), wall);
             }
         }
         created = true;
