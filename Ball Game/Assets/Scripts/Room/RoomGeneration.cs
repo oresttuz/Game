@@ -30,7 +30,7 @@ public class RoomGeneration : MonoBehaviour
 
     public int numRooms;
     public Tilemap floorMap, wallMap;
-    public Tile floor, wall;
+    public Tile floor, wall, door;
     public Vector3Int totalRoomNum, roomSize;
     public GameObject PlayerObject;
 
@@ -158,7 +158,21 @@ public class RoomGeneration : MonoBehaviour
             List<Vector3Int> wallsToAdd = rooms[v3i.x, v3i.y].CreateWalls();
             foreach (Vector3Int wta in wallsToAdd)
             {
-                floorMap.SetTile(new Vector3Int(((v3i.x * roomSize.x) + wta.x), ((v3i.y * roomSize.y) + wta.y), 0), wall);
+                wallMap.SetTile(new Vector3Int(((v3i.x * roomSize.x) + wta.x), ((v3i.y * roomSize.y) + wta.y), 0), wall);
+            }
+            DoorList doorsAndMoreToAdd = rooms[v3i.x, v3i.y].CreateDoors();
+            foreach (Vector3Int f in doorsAndMoreToAdd.floor)
+            {
+                wallMap.SetTile(new Vector3Int(((v3i.x * roomSize.x) + f.x), ((v3i.y * roomSize.y) + f.y), 0), null);
+                floorMap.SetTile(new Vector3Int(((v3i.x * roomSize.x) + f.x), ((v3i.y * roomSize.y) + f.y), 0), floor);
+            }
+            foreach (Vector3Int w in doorsAndMoreToAdd.wall)
+            {
+                wallMap.SetTile(new Vector3Int(((v3i.x * roomSize.x) + w.x), ((v3i.y * roomSize.y) + w.y), 0), wall);
+            }
+            foreach (Vector3Int d in doorsAndMoreToAdd.door)
+            {
+                wallMap.SetTile(new Vector3Int(((v3i.x * roomSize.x) + d.x), ((v3i.y * roomSize.y) + d.y), 0), door);
             }
         }
         created = true;
@@ -244,4 +258,53 @@ public class Walker
         return pos;
     }
 
+    public Vector3Int ControlledStep(int option)
+    {
+        Vector3Int temp = prevPos;
+        prevPos = pos;
+        switch (option)
+        {
+            case 0: // up
+                pos.y--;
+                if (pos.y < lowerBounds.y) // if pos is out of bounds
+                {
+                    pos.y++; // reset pos
+                    prevPos = temp;
+                    return temp = new Vector3Int(-1, -1, -1);
+                }
+                break;
+            case 1: // right
+                pos.x++;
+                if (pos.x >= upperBounds.x) // if pos is out of bounds
+                {
+                    pos.x--; // reset pos
+                    prevPos = temp;
+                    return temp = new Vector3Int(-1, -1, -1);
+                }
+                break;
+            case 2: // down
+                pos.y++;
+                if (pos.y >= upperBounds.y) // if pos is out of bounds
+                {
+                    pos.y--; // reset pos
+                    prevPos = temp;
+                    return temp = new Vector3Int(-1, -1, -1);
+                }
+                break;
+            case 3: // left
+                pos.x--;
+                if (pos.x < lowerBounds.x) // if pos is out of bounds
+                {
+                    pos.x++; // reset pos
+                    prevPos = temp;
+                    return temp = new Vector3Int(-1, -1, -1);
+                }
+                break;
+            default: //invalid option
+                Debug.Log("Invalid Option for Controlled Step");
+                return temp = new Vector3Int(-1, -1, -1);
+        }
+        direction = option;
+        return pos;
+    }
 }

@@ -349,7 +349,7 @@ MonoBehaviour:
   m_Follow: {fileID: 30817999}
   m_Lens:
     FieldOfView: 60
-    OrthographicSize: 17.7
+    OrthographicSize: 102.1
     NearClipPlane: 0.3
     FarClipPlane: 1000
     Dutch: 0
@@ -546,7 +546,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 17.7
+  orthographic size: 102.1
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -744,6 +744,7 @@ MonoBehaviour:
   wallMap: {fileID: 721428906}
   floor: {fileID: 11400000, guid: 9b4c262519f699f478d2674ac5df198a, type: 2}
   wall: {fileID: 11400000, guid: dcb53df4f40801947888938db5afcc66, type: 2}
+  door: {fileID: 11400000, guid: edeec11b8be73f64ebc016dcac2b8c8e, type: 2}
   totalRoomNum: {x: 5, y: 5, z: 0}
   roomSize: {x: 32, y: 32, z: 0}
   PlayerObject: {fileID: 30817992}
