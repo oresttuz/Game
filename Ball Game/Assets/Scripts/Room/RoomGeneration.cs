@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using TMPro;
 
 public class RoomGeneration : MonoBehaviour
 {
@@ -33,6 +34,9 @@ public class RoomGeneration : MonoBehaviour
     public Tile floor, wall, door;
     public Vector3Int totalRoomNum, roomSize;
     public GameObject PlayerObject;
+
+    public TextMeshProUGUI pfTMP;
+    public RectTransform VectorPanel;
 
     private int currRooms;
     private bool full, created;
@@ -66,7 +70,7 @@ public class RoomGeneration : MonoBehaviour
 
         rooms = new Room[totalRoomNum.x, totalRoomNum.y];
         startPos = new Vector3Int(Random.Range(0, totalRoomNum.x), Random.Range(0, totalRoomNum.y), 0);
-        rooms[startPos.x, startPos.y] = new Room(1, roomSize);
+        rooms[startPos.x, startPos.y] = new Room(2, roomSize);
 
         //branch and fill up the rest of the array with rooms
         if (numRooms > (totalRoomNum.x * totalRoomNum.y))
@@ -96,7 +100,7 @@ public class RoomGeneration : MonoBehaviour
             bool AddWalker = (Random.Range(0.0f, 1.0f) >= 0.5f);
             if (AddWalker)
             {
-                walkers.Add(new Walker(startPos, new Vector3Int(0, 0, 0), totalRoomNum));
+                //walkers.Add(new Walker(startPos, new Vector3Int(0, 0, 0), totalRoomNum));
             }
         }
         else if(!created)
@@ -131,15 +135,15 @@ public class RoomGeneration : MonoBehaviour
                 }
                 if (initRooms.Contains(temp))
                 {
-                    rooms[temp.x, temp.y].AddDoorway(tempInt);
+                    //might add something here later
                 }
                 else
                 {
-                    rooms[temp.x, temp.y] = new Room(1, roomSize);
-                    rooms[w.prevPos.x, w.prevPos.y].AddDoorway(tempInt);
+                    rooms[temp.x, temp.y] = new Room(2, roomSize);
                     initRooms.Add(temp);
                     currRooms++;
                 }
+                rooms[temp.x, temp.y].AddDoorway(tempInt);
             }
         }
         return;
@@ -149,7 +153,11 @@ public class RoomGeneration : MonoBehaviour
     {
         foreach (Vector3Int v3i in initRooms)
         {
-            //Debug.Log("Create" + v3i + ", " + rooms[v3i.x, v3i.y]);
+            Debug.Log(v3i + ": " + rooms[v3i.x, v3i.y].PrintDoorways() );
+            TextMeshProUGUI vectorPos = Instantiate(pfTMP, VectorPanel);
+            vectorPos.transform.localPosition = (v3i * roomSize) + (new Vector3(roomSize.x * 0.5f, roomSize.y * 0.5f, 0f));
+            vectorPos.text = "" + v3i;
+
             List<Vector3Int> floorsToAdd = rooms[v3i.x, v3i.y].CreateFloors(roomSize);
             foreach (Vector3Int fta in floorsToAdd)
             {

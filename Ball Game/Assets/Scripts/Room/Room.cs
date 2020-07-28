@@ -68,6 +68,45 @@ public class Room
         }
     }
 
+    public string PrintDoorways()
+    {
+        string doors = "No doors";
+        int count = 0;
+        foreach (bool d in doorways)
+        {
+            if (d)
+            {
+                if (doors == "No doors")
+                {
+                    doors = "Door(s): ";
+                }
+                else
+                {
+                    doors += ", ";
+                }
+                switch (count)
+                {
+                    case 0:
+                        doors += "Up";
+                        break;
+                    case 1:
+                        doors += "Left";
+                        break;
+                    case 2:
+                        doors += "Down";
+                        break;
+                    case 3:
+                        doors += "Right";
+                        break;
+                    default:
+                        break;
+                }
+            }
+            count++;
+        }
+        return doors;
+    }
+
     public List<Vector3Int> CreateFloors(Vector3Int roomSize)
     {
         List<Walker> floorWalkers = new List<Walker>();
@@ -137,55 +176,227 @@ public class Room
 
     public DoorList CreateDoors()
     {
-        int door = 0;
+        int door = 0, iterations = 0, maxIt = 9999;
         DoorList dl = new DoorList();
         foreach (bool d in doorways)
         {
             if (d)
             {
-                Vector3Int leftBound = new Vector3Int(-1, -1, 0), rightBound = new Vector3Int(-1, -1, 0);
+                Vector3Int lowBound = new Vector3Int(-1, -1, 0), highBound = new Vector3Int(-1, -1, 0);
                 switch (door)
                 {
-                    case 0: // top
+                    case 0: // top //updated
+                        for (int x = 0; x < RoomGrid.GetLength(0); x++)
+                        {
+                            for (int y = RoomGrid.GetLength(1) - 1; y >= 0 ; y--)
+                            {
+                                if (RoomGrid[x, y] == TileType.wall && lowBound.x == -1)
+                                {
+                                    lowBound.x = x;
+                                    lowBound.y = y;
+                                }
+                                if (RoomGrid[RoomGrid.GetLength(0) - 1 - x, y] == TileType.wall && highBound.x == -1)
+                                {
+                                    highBound.x = RoomGrid.GetLength(0) - x;
+                                    highBound.y = y;
+                                }
+                            }
+                        }
+                        if ((lowBound.x + 1) < highBound.x)
+                        {
+                            int StartDoor = Random.Range(lowBound.x + 1, highBound.x);
+                            Walker left = new Walker(StartDoor, RoomGrid.GetLength(1) - 1, 0, 0, RoomGrid.GetLength(0), RoomGrid.GetLength(1));
+                            Walker right = new Walker(StartDoor, RoomGrid.GetLength(1) - 1, 0, 0, RoomGrid.GetLength(0), RoomGrid.GetLength(1));
+                            bool DoorFound = false;
+                            Vector3Int bad = new Vector3Int(-1, -1, -1);
+                            iterations = 0;
+                            while (!DoorFound && iterations < maxIt)
+                            {
+                                Vector3Int leftTemp = left.ControlledStep(3);
+                                Vector3Int rightTemp = right.ControlledStep(1);
+                                if (leftTemp == bad)
+                                {
+                                    left.pos = new Vector3Int(StartDoor, (left.pos.y - 1), left.pos.z); 
+                                    left.prevPos = left.pos;
+                                }
+                                else
+                                {
+                                    if (left.pos != left.prevPos && left.pos.y == left.prevPos.y)
+                                    {
+                                        if (RoomGrid[left.pos.x, left.pos.y] == TileType.wall && RoomGrid[left.prevPos.x, left.prevPos.y] == TileType.wall)
+                                        {
+                                            DoorFound = true;
+                                            if (RoomGrid[left.pos.x, left.pos.y - 1] != TileType.floor || RoomGrid[left.prevPos.x, left.prevPos.y - 1] != TileType.floor)
+                                            {
+                                                RoomGrid[left.pos.x, left.pos.y - 1] = TileType.floor;
+                                                RoomGrid[left.prevPos.x, left.prevPos.y - 1] = TileType.floor;
+                                                dl.floor.Add(new Vector3Int(left.pos.x, left.pos.y - 1, left.pos.z));
+                                                dl.floor.Add(new Vector3Int(left.prevPos.x, left.prevPos.y - 1, left.prevPos.z));
+                                                dl.wall.AddRange(FindNeighborsToWall(left.pos.x, left.pos.y - 1));
+                                                dl.wall.AddRange(FindNeighborsToWall(left.prevPos.x, left.prevPos.y - 1));
+                                            }
+                                            RoomGrid[left.pos.x, left.pos.y] = TileType.door;
+                                            RoomGrid[left.prevPos.x, left.prevPos.y] = TileType.door;
+                                            dl.door.Add(left.pos);
+                                            dl.door.Add(left.prevPos);
+                                        }
+                                    }
+                                }
+                                if (rightTemp == bad)
+                                {
+                                    right.pos = new Vector3Int(StartDoor, (right.pos.y - 1), right.pos.z); 
+                                    right.prevPos = right.pos;
+                                }
+                                else
+                                {
+                                    if (right.pos != right.prevPos && right.pos.y == right.prevPos.y && !DoorFound)
+                                    {
+                                        if (RoomGrid[right.pos.x, right.pos.y] == TileType.wall && RoomGrid[right.prevPos.x, right.prevPos.y] == TileType.wall)
+                                        {
+                                            DoorFound = true;
+                                            if (RoomGrid[right.pos.x, right.pos.y - 1] != TileType.floor || RoomGrid[right.prevPos.x, right.prevPos.y - 1] != TileType.floor) 
+                                            {
+                                                RoomGrid[right.pos.x, right.pos.y - 1] = TileType.floor;
+                                                RoomGrid[right.prevPos.x, right.prevPos.y - 1] = TileType.floor;
+                                                dl.floor.Add(new Vector3Int(right.pos.x, right.pos.y - 1, right.pos.z));
+                                                dl.floor.Add(new Vector3Int(right.prevPos.x, right.prevPos.y - 1, right.prevPos.z));
+                                                dl.wall.AddRange(FindNeighborsToWall(right.pos.x, right.pos.y - 1));
+                                                dl.wall.AddRange(FindNeighborsToWall(right.prevPos.x, right.prevPos.y - 1));
+                                            }
+                                            RoomGrid[right.pos.x, right.pos.y] = TileType.door;
+                                            RoomGrid[right.prevPos.x, right.prevPos.y] = TileType.door;
+                                            dl.door.Add(right.pos);
+                                            dl.door.Add(right.prevPos);
+                                        }
+                                    }
+                                }
+                            }
+                            //iterations++;
+                        }
+                        if (iterations >= maxIt)
+                        {
+                            Debug.Log("Case 0 Failed: Hit Max Iterations (" + iterations + ")");
+                        }
+                        break;
+                    case 1: // right //needs to be changed
+                        for (int y = 0; y < RoomGrid.GetLength(1); y++)
+                        {
+                            for (int x = RoomGrid.GetLength(0) - 1; x >= 0; x--)
+                            {
+                                if (RoomGrid[x, y] == TileType.wall && lowBound.y == -1)
+                                {
+                                    lowBound.x = x;
+                                    lowBound.y = y;
+                                }
+                                if (RoomGrid[x, RoomGrid.GetLength(1) - 1 - y] == TileType.wall && highBound.y == -1)
+                                {
+                                    highBound.x = x;
+                                    highBound.y = RoomGrid.GetLength(1) - y;
+                                }
+                            }
+                        }
+                        if ((lowBound.y + 1) < highBound.y)
+                        {
+                            int StartDoor = Random.Range(lowBound.y + 1, highBound.y);
+                            Walker down = new Walker(RoomGrid.GetLength(0) - 1, StartDoor, 0, 0, RoomGrid.GetLength(0), RoomGrid.GetLength(1));
+                            Walker up = new Walker(RoomGrid.GetLength(0) - 1, StartDoor, 0, 0, RoomGrid.GetLength(0), RoomGrid.GetLength(1));
+                            bool DoorFound = false;
+                            Vector3Int bad = new Vector3Int(-1, -1, -1);
+                            iterations = 0;
+                            while (!DoorFound && iterations < maxIt)
+                            {
+                                Vector3Int downTemp = down.ControlledStep(2);
+                                Vector3Int upTemp = up.ControlledStep(0);
+                                if (downTemp == bad)
+                                {
+                                    down.pos = new Vector3Int((down.pos.x - 1), StartDoor, down.pos.z); // bad if y is > room
+                                    down.prevPos = down.pos;
+                                }
+                                else
+                                {
+                                    if (down.pos != down.prevPos && down.pos.x == down.prevPos.x)
+                                    {
+                                        if (RoomGrid[down.pos.x, down.pos.y] == TileType.wall && RoomGrid[down.prevPos.x, down.prevPos.y] == TileType.wall)
+                                        {
+                                            DoorFound = true;
+                                            if (RoomGrid[down.pos.x - 1, down.pos.y] != TileType.floor || RoomGrid[down.prevPos.x - 1, down.prevPos.y] != TileType.floor) // bad if y is > room
+                                            {
+                                                RoomGrid[down.pos.x - 1, down.pos.y] = TileType.floor;
+                                                RoomGrid[down.prevPos.x - 1, down.prevPos.y] = TileType.floor;
+                                                dl.floor.Add(new Vector3Int(down.pos.x - 1, down.pos.y, down.pos.z));
+                                                dl.floor.Add(new Vector3Int(down.prevPos.x - 1, down.prevPos.y, down.prevPos.z));
+                                                dl.wall.AddRange(FindNeighborsToWall(down.pos.x - 1, down.pos.y));
+                                                dl.wall.AddRange(FindNeighborsToWall(down.prevPos.x - 1, down.prevPos.y));
+                                            }
+                                            RoomGrid[down.pos.x, down.pos.y] = TileType.door;
+                                            RoomGrid[down.prevPos.x, down.prevPos.y] = TileType.door;
+                                            dl.door.Add(down.pos);
+                                            dl.door.Add(down.prevPos);
+                                        }
+                                    }
+                                }
+                                if (upTemp == bad)
+                                {
+                                    up.pos = new Vector3Int((up.pos.x - 1), StartDoor, up.pos.z); // bad if y is > room
+                                    up.prevPos = up.pos;
+                                }
+                                else
+                                {
+                                    if (up.pos != up.prevPos && up.pos.x == up.prevPos.x)
+                                    {
+                                        if (RoomGrid[up.pos.x, up.pos.y] == TileType.wall && RoomGrid[up.prevPos.x, up.prevPos.y] == TileType.wall)
+                                        {
+                                            DoorFound = true;
+                                            if (RoomGrid[up.pos.x - 1, up.pos.y] != TileType.floor || RoomGrid[up.prevPos.x - 1, up.prevPos.y] != TileType.floor) // bad if y is > room
+                                            {
+                                                RoomGrid[up.pos.x - 1, up.pos.y] = TileType.floor;
+                                                RoomGrid[up.prevPos.x - 1, up.prevPos.y] = TileType.floor;
+                                                dl.floor.Add(new Vector3Int(up.pos.x - 1, up.pos.y, up.pos.z));
+                                                dl.floor.Add(new Vector3Int(up.prevPos.x - 1, up.prevPos.y, up.prevPos.z));
+                                                dl.wall.AddRange(FindNeighborsToWall(up.pos.x - 1, up.pos.y));
+                                                dl.wall.AddRange(FindNeighborsToWall(up.prevPos.x - 1, up.prevPos.y));
+                                            }
+                                            RoomGrid[up.pos.x, up.pos.y] = TileType.door;
+                                            RoomGrid[up.prevPos.x, up.prevPos.y] = TileType.door;
+                                            dl.door.Add(up.pos);
+                                            dl.door.Add(up.prevPos);
+                                        }
+                                    }
+                                }
+                                //iterations++;
+                            }
+                        }
+                        if (iterations >= maxIt)
+                        {
+                            Debug.Log("Case 1 Failed: Hit Max Iterations (" + iterations + ")");
+                        }
+                        break;
+                    case 2: // bottom //orig
                         for (int x = 0; x < RoomGrid.GetLength(0); x++)
                         {
                             for (int y = 0; y < RoomGrid.GetLength(1); y++)
                             {
-                                if (RoomGrid[x, y] == TileType.wall && leftBound.x == -1)
+                                if (RoomGrid[x, y] == TileType.wall && lowBound.x == -1)
                                 {
-                                    leftBound.x = x;
-                                    leftBound.y = y;
+                                    lowBound.x = x;
+                                    lowBound.y = y;
                                 }
-                                if (RoomGrid[RoomGrid.GetLength(0) - 1 - x, y] == TileType.wall && rightBound.x == -1)
+                                if (RoomGrid[RoomGrid.GetLength(0) - 1 - x, y] == TileType.wall && highBound.x == -1)
                                 {
-                                    rightBound.x = RoomGrid.GetLength(0) - x;
-                                    rightBound.y = y;
+                                    highBound.x = RoomGrid.GetLength(0) - x;
+                                    highBound.y = y;
                                 }
                             }
                         }
-                        if ((leftBound.x + 1) < rightBound.x)
+                        if ((lowBound.x + 1) < highBound.x)
                         {
-                            int doorDiff = 1;
-                            int side = 0; // left = -1, right = 1
-                            int StartDoor = Random.Range(leftBound.x + 1, rightBound.x);
-                            int leftDis = StartDoor - leftBound.x;
-                            int rightDis = rightBound.x - StartDoor;
-                            if (leftDis > rightDis)
-                            {
-                                doorDiff = Mathf.FloorToInt(leftDis/rightDis);
-                                side = -1;
-                            }
-                            else
-                            {
-                                doorDiff = Mathf.FloorToInt(rightDis / leftDis);
-                                side = 1;
-                            }
+                            int StartDoor = Random.Range(lowBound.x + 1, highBound.x);
                             Walker left = new Walker(StartDoor, 0, 0, 0, RoomGrid.GetLength(0), RoomGrid.GetLength(1));
                             Walker right = new Walker(StartDoor, 0, 0, 0, RoomGrid.GetLength(0), RoomGrid.GetLength(1));
                             bool DoorFound = false;
-                            int ratioCount = 0;
                             Vector3Int bad = new Vector3Int(-1, -1, -1);
-                            while (!DoorFound)
+                            iterations = 0;
+                            while (!DoorFound && iterations < maxIt)
                             {
                                 Vector3Int leftTemp = left.ControlledStep(3);
                                 Vector3Int rightTemp = right.ControlledStep(1);
@@ -245,15 +456,106 @@ public class Room
                                         }
                                     }
                                 }
-
+                                //iterations++;
                             }
                         }
+                        if (iterations >= maxIt)
+                        {
+                            Debug.Log("Case 2 Failed: Hit Max Iterations (" + iterations + ")");
+                        }
                         break;
-                    case 1: // right
-                        break;
-                    case 2: // bottom
-                        break;
-                    case 3: //left
+                    case 3: //left //needs to be changed
+                        for (int y = 0; y < RoomGrid.GetLength(1); y++)
+                        {
+                            for (int x = 0; x < RoomGrid.GetLength(0); x++)
+                            {
+                                if (RoomGrid[x, y] == TileType.wall && lowBound.y == -1)
+                                {
+                                    lowBound.x = x;
+                                    lowBound.y = y;
+                                }
+                                if (RoomGrid[x, RoomGrid.GetLength(1) - 1 - y] == TileType.wall && highBound.y == -1)
+                                {
+                                    highBound.x = x;
+                                    highBound.y = RoomGrid.GetLength(1) - y;
+                                }
+                            }
+                        }
+                        if ((lowBound.y + 1) < highBound.y)
+                        {
+                            int StartDoor = Random.Range(lowBound.y + 1, highBound.y);
+                            Walker down = new Walker(0, StartDoor, 0, 0, RoomGrid.GetLength(0), RoomGrid.GetLength(1));
+                            Walker up = new Walker(0, StartDoor, 0, 0, RoomGrid.GetLength(0), RoomGrid.GetLength(1));
+                            bool DoorFound = false;
+                            Vector3Int bad = new Vector3Int(-1, -1, -1);
+                            iterations = 0;
+                            while (!DoorFound && iterations < maxIt)
+                            {
+                                Vector3Int downTemp = down.ControlledStep(2);
+                                Vector3Int upTemp = up.ControlledStep(0);
+                                if (downTemp == bad)
+                                {
+                                    down.pos = new Vector3Int((down.pos.x + 1), StartDoor, down.pos.z); // bad if y is > room
+                                    down.prevPos = down.pos;
+                                }
+                                else
+                                {
+                                    if (down.pos != down.prevPos && down.pos.x == down.prevPos.x)
+                                    {
+                                        if (RoomGrid[down.pos.x, down.pos.y] == TileType.wall && RoomGrid[down.prevPos.x, down.prevPos.y] == TileType.wall)
+                                        {
+                                            DoorFound = true;
+                                            if (RoomGrid[down.pos.x + 1, down.pos.y] != TileType.floor || RoomGrid[down.prevPos.x + 1, down.prevPos.y] != TileType.floor) // bad if y is > room
+                                            {
+                                                RoomGrid[down.pos.x + 1, down.pos.y] = TileType.floor;
+                                                RoomGrid[down.prevPos.x + 1, down.prevPos.y] = TileType.floor;
+                                                dl.floor.Add(new Vector3Int(down.pos.x + 1, down.pos.y, down.pos.z));
+                                                dl.floor.Add(new Vector3Int(down.prevPos.x + 1, down.prevPos.y, down.prevPos.z));
+                                                dl.wall.AddRange(FindNeighborsToWall(down.pos.x + 1, down.pos.y));
+                                                dl.wall.AddRange(FindNeighborsToWall(down.prevPos.x + 1, down.prevPos.y));
+                                            }
+                                            RoomGrid[down.pos.x, down.pos.y] = TileType.door;
+                                            RoomGrid[down.prevPos.x, down.prevPos.y] = TileType.door;
+                                            dl.door.Add(down.pos);
+                                            dl.door.Add(down.prevPos);
+                                        }
+                                    }
+                                }
+                                if (upTemp == bad)
+                                {
+                                    up.pos = new Vector3Int((up.pos.x + 1), StartDoor, up.pos.z); // bad if y is > room
+                                    up.prevPos = up.pos;
+                                }
+                                else
+                                {
+                                    if (up.pos != up.prevPos && up.pos.x == up.prevPos.x)
+                                    {
+                                        if (RoomGrid[up.pos.x, up.pos.y] == TileType.wall && RoomGrid[up.prevPos.x, up.prevPos.y] == TileType.wall)
+                                        {
+                                            DoorFound = true;
+                                            if (RoomGrid[up.pos.x + 1, up.pos.y] != TileType.floor || RoomGrid[up.prevPos.x + 1, up.prevPos.y] != TileType.floor) // bad if y is > room
+                                            {
+                                                RoomGrid[up.pos.x + 1, up.pos.y] = TileType.floor;
+                                                RoomGrid[up.prevPos.x + 1, up.prevPos.y] = TileType.floor;
+                                                dl.floor.Add(new Vector3Int(up.pos.x + 1, up.pos.y, up.pos.z));
+                                                dl.floor.Add(new Vector3Int(up.prevPos.x + 1, up.prevPos.y, up.prevPos.z));
+                                                dl.wall.AddRange(FindNeighborsToWall(up.pos.x + 1, up.pos.y));
+                                                dl.wall.AddRange(FindNeighborsToWall(up.prevPos.x + 1, up.prevPos.y));
+                                            }
+                                            RoomGrid[up.pos.x, up.pos.y] = TileType.door;
+                                            RoomGrid[up.prevPos.x, up.prevPos.y] = TileType.door;
+                                            dl.door.Add(up.pos);
+                                            dl.door.Add(up.prevPos);
+                                        }
+                                    }
+                                }
+                                //iterations++;
+                            }
+                        }
+                        if (iterations >= maxIt)
+                        {
+                            Debug.Log("Case 3 Failed: Hit Max Iterations (" + iterations + ")");
+                        }
                         break;
                     default:
                         break;
@@ -348,6 +650,13 @@ public class DoorList
         door = new List<Vector3Int>();
     }
 
+    public void AddDoorListRange(DoorList d)
+    {
+        floor.AddRange(d.floor);
+        wall.AddRange(d.wall);
+        door.AddRange(d.door);
+        return;
+    }
 }
 
 
