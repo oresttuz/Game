@@ -105,27 +105,43 @@ public class Room
         return initTilePos;
     }
 
-    public List<Vector3Int> CreateWalls()
+    public List<Vector3Int> CreateWalls(bool boundaryOn)
     {
         List<Vector3Int> initWallPos = new List<Vector3Int>();
         int prevBound = boundary;
-        if (boundary <= 0)
+        if (boundaryOn)
         {
-            boundary = 1;
-        }
-        for (int w = boundary; w < RoomGrid.GetLength(0) - boundary; w++)
-        {
-            for (int h = boundary; h < RoomGrid.GetLength(1) - boundary; h++)
+            if (boundary <= 0)
             {
-                if (RoomGrid[w, h] == TileType.floor)
+                boundary = 1;
+            }
+            for (int w = boundary; w < RoomGrid.GetLength(0) - boundary; w++)
+            {
+                for (int h = boundary; h < RoomGrid.GetLength(1) - boundary; h++)
                 {
-                    initWallPos.AddRange(FindNeighborsToWall(w, h));
+                    if (RoomGrid[w, h] == TileType.floor)
+                    {
+                        initWallPos.AddRange(FindNeighborsToWall(w, h));
+                    }
                 }
             }
+            if (prevBound != boundary)
+            {
+                boundary = prevBound;
+            }
         }
-        if (prevBound != boundary)
+        else
         {
-            boundary = prevBound;
+            for (int w = boundary; w < RoomGrid.GetLength(0); w++)
+            {
+                for (int h = boundary; h < RoomGrid.GetLength(1); h++)
+                {
+                    if (RoomGrid[w, h] == TileType.floor)
+                    {
+                        initWallPos.AddRange(FindNeighborsToWall(w, h));
+                    }
+                }
+            }
         }
         return initWallPos;
     }
@@ -390,7 +406,7 @@ public class Room
                     {
                         if (w.pos != w.prevPos && w.pos.y == w.prevPos.y && !DoorFound)
                         {
-                            if (RoomGrid[w.pos.x, w.pos.y] == TileType.wall && RoomGrid[w.prevPos.x, w.prevPos.y] == TileType.wall)
+                            if (RoomGrid[w.pos.x, w.pos.y] == TileType.wall && RoomGrid[w.prevPos.x, w.prevPos.y] == TileType.wall) //crashed twice?
                             {
                                 DoorFound = true;
                                 if (RoomGrid[w.pos.x, w.pos.y + 1] != TileType.floor || RoomGrid[w.prevPos.x, w.prevPos.y + 1] != TileType.floor)
@@ -784,59 +800,83 @@ public class Room
             switch (n)
             {
                 case 0: // NW
-                    if (RoomGrid[x - 1, y - 1] == TileType.empty)
+                    if (x - 1 >= 0 && y - 1 >= 0)
                     {
-                        RoomGrid[x - 1, y - 1] = TileType.wall;
-                        temp.Add(new Vector3Int(x - 1, y - 1, 0));
+                        if (RoomGrid[x - 1, y - 1] == TileType.empty)
+                        {
+                            RoomGrid[x - 1, y - 1] = TileType.wall;
+                            temp.Add(new Vector3Int(x - 1, y - 1, 0));
+                        }
                     }
                     break;
                 case 1: // N
-                    if (RoomGrid[x, y - 1] == TileType.empty)
+                    if (y - 1 >= 0)
                     {
-                        RoomGrid[x, y - 1] = TileType.wall;
-                        temp.Add(new Vector3Int(x, y - 1, 0));
+                        if (RoomGrid[x, y - 1] == TileType.empty)
+                        {
+                            RoomGrid[x, y - 1] = TileType.wall;
+                            temp.Add(new Vector3Int(x, y - 1, 0));
+                        }
                     }
                     break;
                 case 2: // NE
-                    if (RoomGrid[x + 1, y - 1] == TileType.empty)
+                    if (x + 1 < RoomGrid.GetLength(0) && y - 1 >= 0)
                     {
-                        RoomGrid[x + 1, y - 1] = TileType.wall;
-                        temp.Add(new Vector3Int(x + 1, y - 1, 0));
+                        if (RoomGrid[x + 1, y - 1] == TileType.empty)
+                        {
+                            RoomGrid[x + 1, y - 1] = TileType.wall;
+                            temp.Add(new Vector3Int(x + 1, y - 1, 0));
+                        }
                     }
                     break;
                 case 3: // W
-                    if (RoomGrid[x - 1, y] == TileType.empty)
+                    if (x - 1 >= 0)
                     {
-                        RoomGrid[x - 1, y] = TileType.wall;
-                        temp.Add(new Vector3Int(x - 1, y, 0));
+                        if (RoomGrid[x - 1, y] == TileType.empty)
+                        {
+                            RoomGrid[x - 1, y] = TileType.wall;
+                            temp.Add(new Vector3Int(x - 1, y, 0));
+                        }
                     }
                     break;
                 case 4: // E
-                    if (RoomGrid[x + 1, y] == TileType.empty)
+                    if (x + 1 < RoomGrid.GetLength(0))
                     {
-                        RoomGrid[x + 1, y] = TileType.wall;
-                        temp.Add(new Vector3Int(x + 1, y, 0));
+                        if (RoomGrid[x + 1, y] == TileType.empty)
+                        {
+                            RoomGrid[x + 1, y] = TileType.wall;
+                            temp.Add(new Vector3Int(x + 1, y, 0));
+                        }
                     }
                     break;
                 case 5: // SW
-                    if (RoomGrid[x - 1, y + 1] == TileType.empty)
+                    if (x - 1 >= 0 && y + 1 < RoomGrid.GetLength(1))
                     {
-                        RoomGrid[x - 1, y + 1] = TileType.wall;
-                        temp.Add(new Vector3Int(x - 1, y + 1, 0));
+                        if (RoomGrid[x - 1, y + 1] == TileType.empty)
+                        {
+                            RoomGrid[x - 1, y + 1] = TileType.wall;
+                            temp.Add(new Vector3Int(x - 1, y + 1, 0));
+                        }
                     }
                     break;
                 case 6: // S
-                    if (RoomGrid[x, y + 1] == TileType.empty)
+                    if (y + 1 < RoomGrid.GetLength(1))
                     {
-                        RoomGrid[x, y + 1] = TileType.wall;
-                        temp.Add(new Vector3Int(x, y + 1, 0));
+                        if (RoomGrid[x, y + 1] == TileType.empty)
+                        {
+                            RoomGrid[x, y + 1] = TileType.wall;
+                            temp.Add(new Vector3Int(x, y + 1, 0));
+                        }
                     }
                     break;
                 default: // SE
-                    if (RoomGrid[x + 1, y + 1] == TileType.empty)
+                    if (x + 1 < RoomGrid.GetLength(0) && y + 1 < RoomGrid.GetLength(1))
                     {
-                        RoomGrid[x + 1, y + 1] = TileType.wall;
-                        temp.Add(new Vector3Int(x + 1, y + 1, 0));
+                        if (RoomGrid[x + 1, y + 1] == TileType.empty)
+                        {
+                            RoomGrid[x + 1, y + 1] = TileType.wall;
+                            temp.Add(new Vector3Int(x + 1, y + 1, 0));
+                        }
                     }
                     break;
             }

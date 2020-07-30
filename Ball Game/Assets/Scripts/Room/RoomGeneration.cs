@@ -200,7 +200,7 @@ public class RoomGeneration : MonoBehaviour
             {
                 floorMap.SetTile(new Vector3Int(((v3i.x * roomSize.x) + fta.x), ((v3i.y * roomSize.y) + fta.y), 0), floor);
             }
-            List<Vector3Int> wallsToAdd = rooms[v3i.x, v3i.y].CreateWalls();
+            List<Vector3Int> wallsToAdd = rooms[v3i.x, v3i.y].CreateWalls(1==1);
             foreach (Vector3Int wta in wallsToAdd)
             {
                 wallMap.SetTile(new Vector3Int(((v3i.x * roomSize.x) + wta.x), ((v3i.y * roomSize.y) + wta.y), 0), wall);
@@ -289,6 +289,15 @@ public class RoomGeneration : MonoBehaviour
         foreach (Vector3Int hwTile in allHallwayTilePositions)
         {
             floorMap.SetTile(hwTile, hallway);
+        }
+        List<Vector3Int> wallTiles = new List<Vector3Int>();
+        foreach (Vector3Int roomVector in initRooms)
+        {
+            wallTiles.AddRange(RoomScale(rooms[roomVector.x, roomVector.y].CreateWalls(false), roomVector));
+        }
+        foreach (Vector3Int wt in wallTiles)
+        {
+            wallMap.SetTile(wt, wall);
         }
     }
 
